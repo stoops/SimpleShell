@@ -1,0 +1,65 @@
+
+[inpt setEditable:NO];
+
+- (NSArray<NSValue *> *)textView:(NSTextView *)txtView willChangeSelectionFromCharacterRanges:(NSArray<NSValue *> *)oldRange toCharacterRanges:(NSArray<NSValue *> *)newRange {
+    NSArray<NSValue *> *retRange = newRange;
+    if (self.vobj != nil) {
+        int iidx = (self.indx.intValue - 1);
+        if ((-1 < iidx) && (iidx < [self.tabs count])) {
+            if ([self.inpt containsObject:txtView]) {
+                int rows = (self.rows.intValue + 0);
+                int wrap = (self.wrap.intValue + 0);
+                int didx = [self.crsx objectAtIndex:iidx].intValue;
+
+                int totl = ((int)[[txtView textStorage] length]);
+                int rlen = ((totl / wrap) + 1);
+                int rbeg = MAX(0, rows - rlen);
+
+                int zero = 0;
+                int rnum = (didx >> 16), cnum = (didx & 0xffff);
+                int crno = MAX(0, rnum - rbeg), ccno = cnum;
+
+                if (ccno == zero) {
+                    crno = MAX(0, crno - 1); ccno = (wrap - 1);
+                }
+
+                int curs = ((crno * wrap) + (ccno + 0));
+                if (curs < totl) { totl = curs; }
+
+                NSRange locRange = NSMakeRange(totl, 0);
+                retRange = @[[NSValue valueWithRange:locRange]];
+
+                //NSLog(@"SELV [%d] [%d] [%d][%d] [%d][%d] [%d][%d] [%d][%d] [%lu] [%@][%@]", iidx, didx, rnum, cnum, crno, ccno, curs, wrap, self.rows.intValue, self.cols.intValue, (unsigned long)totl, newRange, retRange);
+
+                if (newRange.count > 0) {
+                    if (newRange.count > 0) {
+                        NSRange tmpRange = [newRange.firstObject rangeValue];
+                        if (tmpRange.length > 0) {
+                            return newRange;
+                        }
+                        if (tmpRange.location < totl) {
+                            return retRange;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return retRange;
+}
+
+CGFloat fntw = [self tell:'w' indx:indx];
+CGFloat fnth = [self tell:'h' indx:indx];
+
+if ((data != nil) || (lidx != 0)) {
+    NSNotification *noti = [NSNotification notificationWithName:@"TextDidChange" object:inpt];
+    [self textDidChange:noti];
+    NSArray<NSValue *> *rang =[self textView:inpt willChangeSelectionFromCharacterRanges:@[] toCharacterRanges:@[]];
+    if (rang.count > 0) { [inpt setSelectedRanges:rang]; }
+}
+
+CursorText *ct = (CursorText *)inpt;
+ct.wide = (self.mode.intValue != 2) ? fntw : 0.0;
+ct.high = (self.mode.intValue != 2) ? fnth : 0.0;
+[ct setNeedsDisplay:YES];
+
